@@ -1,0 +1,123 @@
+name: Team Membership Management
+
+on:
+  issues:
+    types: [opened, edited, closed]
+
+jobs:
+  assign-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if issue is a membership request
+        id: check-issue
+        run: |
+          if [[ "${{ github.event.issue.title }}" == "Add Me" ]]; then
+            echo "::set-output name=is_membership_request::true"
+          else
+            echo "::set-output name=is_membership_request::false"
+          fi
+
+      - name: Get members of the org-admins team
+        if: steps.check-issue.outputs.is_membership_request == 'true'
+        id: get-admins
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: members } = await github.rest.teams.listMembersInOrg({
+              org: context.repo.owner,
+              team_slug: 'admins-access',
+            });
+            const adminUsernames = members.map(member => member.login);
+            return adminUsernames;
+
+      - name: Assign issue to a random org admin
+        if: steps.check-issue.outputs.is_membership_request == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const adminUsernames = ${{ toJSON(steps.get-admins.outputs.result) }};
+            const randomAdmin = adminUsernames[Math.floor(Math.random() * adminUsernames.length)];
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              assignees: [randomAdmin],
+            });
+            console.log(`Issue assigned to org admin: ${randomAdmin}`);
+
+  process-approval:
+    runs-on: ubuntu-latest
+    needs: assign-issue
+    if: github.event.action == 'closed' && contains(github.event.issue.assignees.*.login, 'org-admins')
+    steps:
+      - name: Check if justification is provided
+        id: check-justification
+        run: |
+          if [[ -z "${{ github.event.issue.body }}" ]]; then
+            echo "::set-output name=has_justification::false"
+          else
+            echo "::set-output name=has_justification::true"
+          fi
+
+      - name: Comment if no justification is provided
+        if: steps.check-justification.outputs.has_justification == 'false'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "⚠️ This issue was closed without a justification. Please reopen the issue and provide a justification for your request."
+            });
+
+      - name: Check if issue was approved or rejected
+        id: check-labels
+        if: steps.check-justification.outputs.has_justification == 'true'
+        run: |
+          if [[ "${{ github.event.issue.labels.*.name }}" =~ "approved" ]]; then
+            echo "::set-output name=is_approved::true"
+          elif [[ "${{ github.event.issue.labels.*.name }}" =~ "rejected" ]]; then
+            echo "::set-output name=is_approved::false"
+          else
+            echo "::set-output name=is_approved::skip"
+          fi
+
+      - name: Add member to team
+        if: steps.check-labels.outputs.is_approved == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const username = "${{ github.event.issue.user.login }}";
+            await github.rest.teams.addOrUpdateMembershipForUserInOrg({
+              org: context.repo.owner, #this return the github org where the repo belong to
+              team_slug: 'temp-access',  # Replace with your team slug
+              username: username
+            });
+            console.log(`Added ${username} to the team.`);
+
+      - name: Reject member request
+        if: steps.check-labels.outputs.is_approved == 'false'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const username = "${{ github.event.issue.user.login }}";
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `❌ Your request to join the team has been rejected.`
+            });
+            console.log(`Rejected ${username}'s request to join the team.`);
+
+      - name: Comment if no valid label is found
+        if: steps.check-labels.outputs.is_approved == 'skip'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "⚠️ This issue was closed without an 'approved' or 'rejected' label. Please add one of these labels to process the request."
+            });
