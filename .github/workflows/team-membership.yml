@@ -32,12 +32,12 @@ jobs:
             const allowedLabelCount = labels.filter(label => allowedLabels.includes(label)).length; 
 
             // Notify the user
-            if (labels.length > 1 || allowedLabelCount > 1) {
+            if (labels.length > 1 || allowedLabelCount > 1 || labels.length == 0 ) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body: `@${context.payload.sender.login}, only one of the following labels is allowed for issues with the title "Add Me": ${allowedLabels.join(', ')}. Extra labels have been removed.`,
+                body: `@${context.payload.sender.login}, only one of the following labels is allowed for issues with the title "Add Me": ${allowedLabels.join(', ')}. Extra labels or No labels are not allowed.`,
               });
               console.log("is_label_valid=false");
               return false; // Return false to indicate invalid labels
