@@ -63,6 +63,7 @@ jobs:
       #check if admin closed this issue or not
       - name: Check if by admin team
         id: check-admin
+        if: steps.validate-labels.outputs.result == 'true'
         uses: actions/github-script@v6
         with:
           script: |
@@ -89,39 +90,6 @@ jobs:
                 throw error;
               }
             }
-
-  # assign-issue:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check if issue is a membership request
-  #       id: check-issue
-  #       run: |
-  #         if [[ "${{ github.event.issue.title }}" == "Add Me" ]]; then
-  #           echo "is_membership_request=true" >> $GITHUB_OUTPUT
-  #         else
-  #           echo "is_membership_request=false" >> $GITHUB_OUTPUT
-  #         fi
-      
-  #     - name: mid-step
-  #       id: mid-step
-  #       run: |
-  #         echo  "${{ toJSON(github.event.issue.labels[0].name) }}"
-  #         echo  "${{steps.check-issue.outputs.is_membership_request}}"
-
-  #     - name: Assign issue to a random org admin
-  #       if: steps.check-issue.outputs.is_membership_request == 'true'
-  #       uses: actions/github-script@v6
-  #       with:
-  #         script: |
-  #           const teamSlug = 'admins-access';  // Replace with your team's slug
-  #           const org = context.repo.owner;
-  #           await github.rest.issues.createComment({
-  #             owner: org,
-  #             repo: context.repo.repo,
-  #             issue_number: context.issue.number,
-  #             body: `Hey @${org}/${teamSlug}, please review this membership request!`,
-  #           });
-  #           console.log(`Mentioned team @${org}/${teamSlug} in a comment.`);
 
   # process-approval:
   #   runs-on: ubuntu-latest

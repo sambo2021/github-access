@@ -1,101 +1,32 @@
-# name: Enforce Label Restrictions
+name: Assign issue to admin
+on:
+  issues:
+    types: [created]
 
-# on:
-#   issues:
-#     types: [labeled]
+jobs:
+  process-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if issue is a membership request
+        id: check-issue
+        run: |
+          if [[ "${{ github.event.issue.title }}" == "Add Me" ]]; then
+            echo "is_membership_request=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_membership_request=false" >> $GITHUB_OUTPUT
+          fi
 
-# jobs:
-#   process-label:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v3
-
-#       - name: Save issue data to a file
-#         run: |
-#           echo "${{ github.event.issue.number }}" > issue_number.txt
-#           echo "${{ github.event.label.name }}" > label_name.txt
-
-#       - name: Upload issue data as an artifact
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: issue-data
-#           path: |
-#             issue_number.txt
-#             label_name.txt
-  
-#   latest-label:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v3
-
-#       - name: Save issue data to a file
-#         run: |
-#           echo "${{ github.event.issue.number }}" > issue_number.txt
-#           echo "${{ github.event.label.name }}" > label_name.txt
-
-#       - name: Upload issue data as an artifact
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: issue-data
-#           path: |
-#             issue_number.txt
-#             label_name.txt  
-  
-#   enforce-label-restrictions:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Check if the user is in the admin team
-#         id: check-admin
-#         uses: actions/github-script@v6
-#         with:
-#           script: |
-#             const username = context.payload.sender.login;
-#             const org = context.repo.owner;
-#             const teamSlug = 'admins-access';  // Replace with your admin team's slug
-
-#             try {
-#               // Check if the user is a member of the admin team
-#               const { data: membership } = await github.rest.teams.getMembershipForUserInOrg({
-#                 org: org,
-#                 team_slug: teamSlug,
-#                 username: username,
-#               });
-
-#               console.log(`${username} is a member of the admin team.`);
-#               return true;
-#             } catch (error) {
-#               if (error.status === 404) {
-#                 console.log(`${username} is not a member of the admin team.`);
-#                 return false;
-#               } else {
-#                 throw error;
-#               }
-#             }
-
-#       - name: Remove label if user is not in the admin team
-#         if: steps.check-admin.outputs.result == 'false'
-#         uses: actions/github-script@v6
-#         with:
-#           script: |
-#             const label = context.payload.label.name;
-#             const issueNumber = context.payload.issue.number;
-
-#             // Remove the label
-#             await github.rest.issues.removeLabel({
-#               owner: context.repo.owner,
-#               repo: context.repo.repo,
-#               issue_number: issueNumber,
-#               name: label,
-#             });
-
-#             // Add a comment to notify the user
-#             await github.rest.issues.createComment({
-#               owner: context.repo.owner,
-#               repo: context.repo.repo,
-#               issue_number: issueNumber,
-#               body: `@${context.payload.sender.login}, only members of the admin team can add labels to issues. The label "${label}" has been removed.`,
-#             });
-
-#             console.log(`Removed label "${label}" added by ${context.payload.sender.login}.`);
+      - name: Assign issue to a random org admin
+        if: steps.check-issue.outputs.is_membership_request == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const teamSlug = 'admins-access';  // Replace with your team's slug
+            const org = context.repo.owner;
+            await github.rest.issues.createComment({
+              owner: org,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Hey @${org}/${teamSlug}, please review this membership request!`,
+            });
+            console.log(`Mentioned team @${org}/${teamSlug} in a comment.`);
