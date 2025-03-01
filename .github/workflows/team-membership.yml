@@ -16,39 +16,27 @@ jobs:
           else
             echo "is_membership_request=false" >> $GITHUB_OUTPUT
           fi
+      
       - name: mid-step
         id: mid-step
         run: |
           echo  "${{ toJSON(github.event.issue.labels[0].name) }}"
           echo  "${{steps.check-issue.outputs.is_membership_request}}"
 
-      - name: Get members of the org-admins team
-        if: steps.check-issue.outputs.is_membership_request == 'true'
-        id: get-admins
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { data: members } = await github.rest.teams.listMembersInOrg({
-              org: context.repo.owner,
-              team_slug: 'admins-access',
-            });
-            const adminUsernames = members.map(member => member.login);
-            return adminUsernames;
-
       - name: Assign issue to a random org admin
         if: steps.check-issue.outputs.is_membership_request == 'true'
         uses: actions/github-script@v6
         with:
           script: |
-            const adminUsernames = ${{ toJSON(steps.get-admins.outputs.result) }};
-            const randomAdmin = adminUsernames[Math.floor(Math.random() * adminUsernames.length)];
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
+            const teamSlug = 'admins-access';  // Replace with your team's slug
+            const org = context.repo.owner;
+            await github.rest.issues.createComment({
+              owner: org,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              assignees: [randomAdmin],
+              body: `Hey @${org}/${teamSlug}, please review this membership request!`,
             });
-            console.log(`Issue assigned to org admin: ${randomAdmin}`);
+            console.log(`Mentioned team @${org}/${teamSlug} in a comment.`);
 
   process-approval:
     runs-on: ubuntu-latest
