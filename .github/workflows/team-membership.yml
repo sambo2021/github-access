@@ -18,7 +18,7 @@ jobs:
           echo "${{ github.event.issue.number }}"
           echo "${{ github.event.label[*].name }}" > label_name.txt
           for label in github.event.issue.labels; do
-              echo "${{label.name}}"
+              echo "${{label}}"
           done
       # - name: Upload issue data as an artifact
       #   uses: actions/upload-artifact@v3
