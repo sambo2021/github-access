@@ -26,44 +26,9 @@ jobs:
             const issueNumber = context.payload.issue.number;
             const labels = context.payload.issue.labels.map(label => label.name);
 
-            # // Allowed labels
+            // Allowed labels
             const allowedLabels = ['approved', 'rejected'];
-            const allowedLabelCount = labels.filter(label => allowedLabels.includes(label)).length;
-            
-            # // Check if more than one label is present
-            # if (labels.length > 1) {
-            #   console.log(`Issue #${issueNumber} has more than one label. Removing extra labels.`);
-            #   for (const label of labels) {
-            #     if (!allowedLabels.includes(label)) {
-            #       await github.rest.issues.removeLabel({
-            #         owner: context.repo.owner,
-            #         repo: context.repo.repo,
-            #         issue_number: issueNumber,
-            #         name: label,
-            #       });
-            #       console.log(`Removed invalid label: ${label}`);
-            #       echo "is_label_valid=false" >> $GITHUB_OUTPUT
-            #     }
-            #   }
-            # }
-
-            # // Ensure only one of the allowed labels is present
-            # const allowedLabelCount = labels.filter(label => allowedLabels.includes(label)).length;
-            # if (allowedLabelCount > 1) {
-            #   console.log(`Issue #${issueNumber} has more than one allowed label. Removing extra labels.`);
-            #   for (const label of labels) {
-            #     if (allowedLabels.includes(label) && allowedLabelCount > 1) {
-            #       await github.rest.issues.removeLabel({
-            #         owner: context.repo.owner,
-            #         repo: context.repo.repo,
-            #         issue_number: issueNumber,
-            #         name: label,
-            #       });
-            #       console.log(`Removed extra allowed label: ${label}`);
-            #       echo "is_label_valid=false" >> $GITHUB_OUTPUT
-            #     }
-            #   }
-            # }
+            const allowedLabelCount = labels.filter(label => allowedLabels.includes(label)).length; 
 
             // Notify the user
             if (labels.length > 1 || allowedLabelCount > 1) {
@@ -73,14 +38,8 @@ jobs:
                 issue_number: issueNumber,
                 body: `@${context.payload.sender.login}, only one of the following labels is allowed for issues with the title "Add Me": ${allowedLabels.join(', ')}. Extra labels have been removed.`,
               });
-              echo "is_label_valid=false" >> $GITHUB_OUTPUT
-              echo "STOP"
             }
-            # else
-            # {
-            #   echo "is_label_valid=true" >> $GITHUB_OUTPUT
-            #   echo "GO"
-            # }
+
       # - name: Upload issue data as an artifact
       #   uses: actions/upload-artifact@v3
       #   with:
