@@ -59,7 +59,14 @@ jobs:
               console.log("is_label_valid=true");
               return true; // Return true to indicate valid labels
             }
-       
+      
+      #if not valid label
+      - name: exit if not valid label
+        id: check-if
+        if: steps.validate-labels.outputs.result != 'true'
+        run: |
+          exit 0
+        
       #check if admin closed this issue or not
       - name: Check if by admin team
         id: check-admin
@@ -85,18 +92,18 @@ jobs:
             } catch (error) {
               if (error.status === 404) {
                 console.log(`${username} is not a member of the admin team.`);
-                exit 0;
+                return false;
               } else {
                 throw error;
               }
             }
       
-      # #stop running jobs
-      # - name: Exit if not admin
-      #   id: check-if
-      #   if: steps.check-admin.outputs.result != 'true'
-      #   run: |
-      #     exit 0
+      #if not admin
+      - name: Exit if not admin
+        id: check-if
+        if: steps.check-admin.outputs.result != 'true'
+        run: |
+          exit 0
   # process-approval:
   #   runs-on: ubuntu-latest
   #   needs: assign-issue
