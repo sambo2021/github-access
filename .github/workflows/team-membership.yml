@@ -75,10 +75,12 @@ jobs:
               });
               echo "is_label_valid=false" >> $GITHUB_OUTPUT
               echo "STOP"
-            }else{
-              echo "is_label_valid=true" >> $GITHUB_OUTPUT
-              echo "GO"
             }
+            # else
+            # {
+            #   echo "is_label_valid=true" >> $GITHUB_OUTPUT
+            #   echo "GO"
+            # }
       # - name: Upload issue data as an artifact
       #   uses: actions/upload-artifact@v3
       #   with:
