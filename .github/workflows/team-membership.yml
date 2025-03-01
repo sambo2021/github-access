@@ -2,7 +2,7 @@ name: Team Membership Management
 
 on:
   issues:
-    types: [opened, edited, closed]
+    types: [closed]
 
 jobs:
   assign-issue:
@@ -12,9 +12,9 @@ jobs:
         id: check-issue
         run: |
           if [[ "${{ github.event.issue.title }}" == "Add Me" ]]; then
-            echo "::set-output name=is_membership_request::true"
+            echo "name=is_membership_request::true" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=is_membership_request::false"
+            echo "name=is_membership_request::false" >> $GITHUB_OUTPUT
           fi
 
       - name: Get members of the org-admins team
