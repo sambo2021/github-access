@@ -43,7 +43,7 @@ jobs:
                 body: `@${context.payload.sender.login}, only one of the following labels is allowed for issues with the title "Add Me": ${allowedLabels.join(', ')}. Extra labels or No labels are not allowed.`,
               });
               console.log("is_label_valid=false");
-              core.setFailed("Job failed because condition is false.");
+              core.setFailed("Job failed because no valid labels.");
             } 
             else if ( context.payload.issue.labels[0].name != "approved" && context.payload.issue.labels[0].name != "rejected" ) {
               await github.rest.issues.createComment({
@@ -53,19 +53,12 @@ jobs:
                 body: `@${context.payload.sender.login}, only one of the following labels is allowed for issues with the title "Add Me": ${allowedLabels.join(', ')}. Other labels are not allowed.`,
               });
               console.log("is_label_valid=false");
-              core.setFailed("Job failed because condition is false.");
+              core.setFailed("Job failed because no valid labels.");
             }
             else {
               console.log("is_label_valid=true");
               return true; // Return true to indicate valid labels
             }
-      
-      # #if not valid label
-      # - name: exit if not valid label
-      #   if: steps.validate-labels.outputs.result == 'false'
-      #   run: |
-      #     echo "${{steps.validate-labels.outputs.result}}"
-      #     exit 0
         
       #check if admin closed this issue or not
       - name: Check if by admin team
@@ -92,17 +85,12 @@ jobs:
             } catch (error) {
               if (error.status === 404) {
                 console.log(`${username} is not a member of the admin team.`);
-                return false;
+                core.setFailed("Job failed because not admin.");
               } else {
                 throw error;
               }
             }
-      
-      # #if not admin
-      # - name: Exit if not admin
-      #   if: steps.check-admin.outputs.result != 'true'
-      #   run: |
-      #     exit 0
+
   # process-approval:
   #   runs-on: ubuntu-latest
   #   needs: assign-issue
