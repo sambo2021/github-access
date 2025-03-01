@@ -62,7 +62,7 @@ jobs:
       
       #if not valid label
       - name: exit if not valid label
-        if: steps.validate-labels.outputs.result != 'true'
+        if: steps.validate-labels.outputs.result == 'false'
         run: |
           exit 0
         
