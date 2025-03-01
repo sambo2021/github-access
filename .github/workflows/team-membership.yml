@@ -47,9 +47,9 @@ jobs:
         id: check-justification
         run: |
           if [[ -z "${{ github.event.issue.body }}" ]]; then
-            echo "::set-output name=has_justification::false"
+            echo "has_justification=false" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=has_justification::true"
+            echo "has_justification=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Comment if no justification is provided
@@ -68,26 +68,46 @@ jobs:
         id: check-labels
         if: steps.check-justification.outputs.has_justification == 'true'
         run: |
-          if [[ "${{ github.event.issue.labels.*.name }}" =~ "approved" ]]; then
-            echo "::set-output name=is_approved::true"
-          elif [[ "${{ github.event.issue.labels.*.name }}" =~ "rejected" ]]; then
-            echo "::set-output name=is_approved::false"
+          if [[ "${{ github.event.issue.labels[0].name }}" =~ "approved" ]]; then
+            echo "is_approved=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.issue.labels[0].name }}" =~ "rejected" ]]; then
+            echo "is_approved=false" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=is_approved::skip"
+            echo "is_approved=skip" >> $GITHUB_OUTPUT
           fi
 
-      - name: Add member to team
+      - name: Add member to team (if not already a member)
         if: steps.check-labels.outputs.is_approved == 'true'
         uses: actions/github-script@v6
         with:
           script: |
             const username = "${{ github.event.issue.user.login }}";
-            await github.rest.teams.addOrUpdateMembershipForUserInOrg({
-              org: context.repo.owner, #this return the github org where the repo belong to
-              team_slug: 'temp-access',  # Replace with your team slug
-              username: username
-            });
-            console.log(`Added ${username} to the team.`);
+            const org = context.repo.owner;
+            const teamSlug = 'temp-access';  // Replace with your team slug
+
+            try {
+              // Check if the user is already a member of the team
+              const { data: membership } = await github.rest.teams.getMembershipForUserInOrg({
+                org: org,
+                team_slug: teamSlug,
+                username: username,
+              });
+
+              console.log(`${username} is already a member of the team. Membership status: ${membership.state}`);
+            } catch (error) {
+              if (error.status === 404) {
+                // User is not a member of the team, so add them
+                await github.rest.teams.addOrUpdateMembershipForUserInOrg({
+                  org: org,
+                  team_slug: teamSlug,
+                  username: username,
+                });
+                console.log(`Added ${username} to the team.`);
+              } else {
+                // Handle other errors
+                throw error;
+              }
+            }
 
       - name: Reject member request
         if: steps.check-labels.outputs.is_approved == 'false'
