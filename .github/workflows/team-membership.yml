@@ -42,7 +42,7 @@ jobs:
               console.log("is_label_valid=false");
               return false; // Return false to indicate invalid labels
             } 
-            else if ( github.event.issue.labels[0].name != "approved" && github.event.issue.labels[0].name != "rejected" ) {
+            else if ( context.payload.issue.labels[0].name != "approved" && context.payload.issue.labels[0].name != "rejected" ) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
