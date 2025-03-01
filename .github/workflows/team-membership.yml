@@ -6,18 +6,71 @@ on:
 
 jobs:
 
-  process-label:
+  enforce-labels:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Save issue data to a file
+      - name: Check if issue title is "Add Me"
+        id: check-title
         run: |
-          echo "${{ github.event.issue.number }}" > issue_number.txt
-          echo "${{ github.event.issue.number }}"
-          echo "${{ github.event.label[*].name }}" > label_name.txt
-          echo '${{ toJSON(github.event.issue.labels) }}' | jq -r '.[].name'
+          if [[ "${{ github.event.issue.title }}" == "Add Me" ]]; then
+            echo "is_add_me_issue=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_add_me_issue=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate labels
+        if: steps.check-title.outputs.is_add_me_issue == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issueNumber = context.payload.issue.number;
+            const labels = context.payload.issue.labels.map(label => label.name);
+
+            // Allowed labels
+            const allowedLabels = ['approved', 'rejected'];
+
+            // Check if more than one label is present
+            if (labels.length > 1) {
+              console.log(`Issue #${issueNumber} has more than one label. Removing extra labels.`);
+              for (const label of labels) {
+                if (!allowedLabels.includes(label)) {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    name: label,
+                  });
+                  console.log(`Removed invalid label: ${label}`);
+                }
+              }
+            }
+
+            // Ensure only one of the allowed labels is present
+            const allowedLabelCount = labels.filter(label => allowedLabels.includes(label)).length;
+            if (allowedLabelCount > 1) {
+              console.log(`Issue #${issueNumber} has more than one allowed label. Removing extra labels.`);
+              for (const label of labels) {
+                if (allowedLabels.includes(label) && allowedLabelCount > 1) {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    name: label,
+                  });
+                  console.log(`Removed extra allowed label: ${label}`);
+                }
+              }
+            }
+
+            // Notify the user
+            if (labels.length > 1 || allowedLabelCount > 1) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `@${context.payload.sender.login}, only one of the following labels is allowed for issues with the title "Add Me": ${allowedLabels.join(', ')}. Extra labels have been removed.`,
+              });
+            }
       # - name: Upload issue data as an artifact
       #   uses: actions/upload-artifact@v3
       #   with:
