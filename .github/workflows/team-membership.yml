@@ -62,7 +62,6 @@ jobs:
       
       #if not valid label
       - name: exit if not valid label
-        id: check-if
         if: steps.validate-labels.outputs.result != 'true'
         run: |
           exit 0
@@ -100,7 +99,6 @@ jobs:
       
       #if not admin
       - name: Exit if not admin
-        id: check-if
         if: steps.check-admin.outputs.result != 'true'
         run: |
           exit 0
