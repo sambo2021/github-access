@@ -4,7 +4,7 @@ on:
     types: [opened]
 
 jobs:
-  process-label:
+  assign-issue:
     runs-on: ubuntu-latest
     steps:
       - name: Check if issue is a membership request
