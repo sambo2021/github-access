@@ -69,26 +69,26 @@ jobs:
             const username = context.payload.sender.login;
             const org = context.repo.owner;
             const teamSlug = 'admins-access';  // Replace with your admin team's slug
-            console.log(`${username} - ${org} - ${teamSlug})
+            console.log(`${username} - ${org} - ${teamSlug}`)
 
-            # try {
-            #   // Check if the user is a member of the admin team
-            #   const { data: membership } = await github.rest.teams.getMembershipForUserInOrg({
-            #     org: org,
-            #     team_slug: teamSlug,
-            #     username: username,
-            #   });
+            try {
+              // Check if the user is a member of the admin team
+              const { data: membership } = await github.rest.teams.getMembershipForUserInOrg({
+                org: org,
+                team_slug: teamSlug,
+                username: username,
+              });
 
-            #   console.log(`${username} is a member of the admin team.`);
-            #   return true;
-            # } catch (error) {
-            #   if (error.status === 404) {
-            #     console.log(`${username} is not a member of the admin team.`);
-            #     return false;
-            #   } else {
-            #     throw error;
-            #   }
-            # }
+              console.log(`${username} is a member of the admin team.`);
+              return true;
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`${username} is not a member of the admin team.`);
+                return false;
+              } else {
+                throw error;
+              }
+            }
 
   # assign-issue:
   #   runs-on: ubuntu-latest
