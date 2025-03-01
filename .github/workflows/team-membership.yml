@@ -12,9 +12,9 @@ jobs:
         id: check-issue
         run: |
           if [[ "${{ github.event.issue.title }}" == "Add Me" ]]; then
-            echo "name=is_membership_request::true" >> $GITHUB_OUTPUT
+            echo "is_membership_request=true" >> $GITHUB_OUTPUT
           else
-            echo "name=is_membership_request::false" >> $GITHUB_OUTPUT
+            echo "is_membership_request=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Get members of the org-admins team
