@@ -28,7 +28,7 @@ jobs:
 
             # // Allowed labels
             const allowedLabels = ['approved', 'rejected'];
-            const allowedLabelCount = labels.filter(label => ['approved', 'rejected'].includes(label)).length;
+            const allowedLabelCount = labels.filter(label => allowedLabels.includes(label)).length;
             
             # // Check if more than one label is present
             # if (labels.length > 1) {
