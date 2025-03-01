@@ -5,6 +5,40 @@ on:
     types: [closed]
 
 jobs:
+  create-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create default labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const labels = [
+              { name: 'approved', color: '00FF00', description: 'Issue or PR has been approved' },
+              { name: 'rejected', color: 'FF0000', description: 'Issue or PR has been rejected' },
+            ];
+
+            for (const label of labels) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                });
+                console.log(`Created label: ${label.name}`);
+              } catch (error) {
+                if (error.status === 422) {
+                  console.log(`Label already exists: ${label.name}`);
+                } else {
+                  throw error;
+                }
+              }
+            }
+  
   assign-issue:
     runs-on: ubuntu-latest
     steps:
