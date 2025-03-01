@@ -9,6 +9,8 @@ jobs:
   enforce-labels:
     runs-on: ubuntu-latest
     steps:
+      
+      #check of issue title
       - name: Check if issue title is "Add Me"
         id: check-title
         run: |
@@ -17,8 +19,9 @@ jobs:
           else
             echo "is_add_me_issue=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Validate labels
+      
+      #check if valid label or not
+      - name: Validate Labels
         id: validate-labels
         if: steps.check-title.outputs.is_add_me_issue == 'true'
         uses: actions/github-script@v6
@@ -56,16 +59,37 @@ jobs:
               console.log("is_label_valid=true");
               return true; // Return true to indicate valid labels
             }
-        
+       
+      #check if admin closed this issue or not
+      - name: Check if by admin team
+        id: check-admin
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const username = context.payload.sender.login;
+            const org = context.repo.owner;
+            const teamSlug = 'admins-access';  // Replace with your admin team's slug
+            console.log(`${username} - ${org} - ${teamSlug})
 
+            try {
+              // Check if the user is a member of the admin team
+              const { data: membership } = await github.rest.teams.getMembershipForUserInOrg({
+                org: org,
+                team_slug: teamSlug,
+                username: username,
+              });
 
-      # - name: Upload issue data as an artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: issue-data
-      #     path: |
-      #       issue_number.txt
-      #       label_name.txt
+              console.log(`${username} is a member of the admin team.`);
+              return true;
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`${username} is not a member of the admin team.`);
+                return false;
+              } else {
+                throw error;
+              }
+            }
+
   # assign-issue:
   #   runs-on: ubuntu-latest
   #   steps:
