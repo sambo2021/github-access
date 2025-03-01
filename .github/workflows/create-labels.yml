@@ -1,7 +1,7 @@
 name: Assign issue to admin
 on:
   issues:
-    types: [created]
+    types: [opened]
 
 jobs:
   process-label:
