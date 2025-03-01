@@ -39,11 +39,11 @@ jobs:
                 body: `@${context.payload.sender.login}, only one of the following labels is allowed for issues with the title "Add Me": ${allowedLabels.join(', ')}. Extra labels have been removed.`,
               });
               echo "is_label_valid=false" >> $GITHUB_OUTPUT
-              echo "is_label_valid=false"
+              echo "FALSE"
             }
             else{
               echo "is_label_valid=true" >> $GITHUB_OUTPUT
-              echo "is_label_valid=true"
+              echo "TRUE"
             }
 
       # - name: Upload issue data as an artifact
