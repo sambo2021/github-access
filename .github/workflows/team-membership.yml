@@ -19,8 +19,8 @@ jobs:
       - name: mid-step
         id: mid-step
         run: |
-          echo  ${{github.event.issue.labels.*.name}}
-          echo  steps.check-issue.outputs.is_membership_request
+          echo  "${{ toJSON(github.event.issue.labels) }}"
+          echo  "${{steps.check-issue.outputs.is_membership_request}}"
 
       - name: Get members of the org-admins team
         if: steps.check-issue.outputs.is_membership_request == 'true'
