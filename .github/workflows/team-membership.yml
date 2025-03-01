@@ -5,6 +5,26 @@ on:
     types: [closed]
 
 jobs:
+
+  process-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Save issue data to a file
+        run: |
+          echo "${{ github.event.issue.number }}" > issue_number.txt
+          echo "${{ github.event.issue.number }}"
+          echo "${{ github.event.label.name }}" > label_name.txt
+          echo "${{ github.event.label.name }}"
+      # - name: Upload issue data as an artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: issue-data
+      #     path: |
+      #       issue_number.txt
+      #       label_name.txt
   assign-issue:
     runs-on: ubuntu-latest
     steps:
